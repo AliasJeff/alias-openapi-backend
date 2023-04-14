@@ -1,0 +1,8 @@
+server:
+  port: 8123
+servlet:
+  context-path: /api
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher

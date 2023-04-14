@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: alias-openapi-backend
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  # DataSource Config
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/open_api?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 12345678
+  # session
+  session:
+    timeout: 86400
+    store-type: redis
+  # redis
+  redis:
+    port: 6379
+    host: localhost
+    database: 0
+    password:
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true # ??-??? ??
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete # ????????????(since 3.3.0,????????????2)
+      logic-delete-value: 1 # ??????(??? 1)
+      logic-not-delete-value: 0 # ??????(??? 0)
+      id-type: ASSIGN_ID  #??????
+knife4j:
+  enable: true
+  openapi:
+    title: Knife4j????
+    description: "`????`,**????**
+    # aaa"
+    email: xiaoymin@foxmail.com
+    concat: ????
+    url: https://docs.xiaominfo.com
+    version: v4.0
+    license: Apache 2.0
+    license-url: https://stackoverflow.com/
+    terms-of-service-url: https://stackoverflow.com/
+    group:
+      test1:
+        group-name: ????
+        api-rule: package
+        api-rule-resources:
+          - com.knife4j.demo.new3
+dubbo:
+  application:
+    name: openapidubbo
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    id: nacos-registry
+    address: nacos://localhost:8848
