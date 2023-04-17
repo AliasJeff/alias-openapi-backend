@@ -12,6 +12,16 @@ spring:
           uri: http://localhost:8123
           predicates:
             - Path=/api/**
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowCredentials: true
+            allowedOrigins: "*"
+            allowedHeaders: "*"
+            allowedMethods: "*"
+            maxAge: 3628800
+
+
 
 dubbo:
   application:

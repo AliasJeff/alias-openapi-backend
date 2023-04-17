@@ -86,9 +86,6 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         if (invokeUser == null) {
             return handleNoAuth(response);
         }
-//        if (!"yupi".equals(accessKey)) {
-//            return handleNoAuth(response);
-//        }
         if (Long.parseLong(nonce) > 10000L) {
             return handleNoAuth(response);
         }

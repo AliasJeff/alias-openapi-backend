@@ -105,6 +105,7 @@ public class UserController {
      * @return
      */
     @GetMapping("/currentUser")
+    @CrossOrigin(origins = "http://localhost:8080",allowCredentials = "true")
     public BaseResponse<UserVO> getLoginUser(HttpServletRequest request) {
         log.info("current user...");
         User user = userService.getLoginUser(request);
