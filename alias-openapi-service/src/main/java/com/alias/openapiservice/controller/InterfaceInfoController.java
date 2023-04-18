@@ -2,6 +2,7 @@ package com.alias.openapiservice.controller;
 
 import com.alias.clientsdk.client.AliasOpenapiClient;
 import com.alias.openapiservice.annotation.AuthCheck;
+import com.alias.openapiservice.annotation.UserInterfaceInfoChanged;
 import com.alias.openapiservice.common.*;
 import com.alias.openapiservice.constant.CommonConstant;
 import com.alias.openapiservice.exception.BusinessException;
@@ -25,11 +26,6 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
-/**
- * 帖子接口
- *
- * @author yupi
- */
 @RestController
 @RequestMapping("/interfaceInfo")
 @Slf4j
@@ -54,6 +50,7 @@ public class InterfaceInfoController {
      */
     @PostMapping("/add")
     @AuthCheck(mustRole = "admin")
+    @UserInterfaceInfoChanged
     public BaseResponse<Long> addInterfaceInfo(@RequestBody InterfaceInfoAddRequest interfaceInfoAddRequest, HttpServletRequest request) {
         if (interfaceInfoAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -81,6 +78,7 @@ public class InterfaceInfoController {
      */
     @PostMapping("/delete")
     @AuthCheck(mustRole = "admin")
+    @UserInterfaceInfoChanged
     public BaseResponse<Boolean> deleteInterfaceInfo(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -109,6 +107,7 @@ public class InterfaceInfoController {
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = "admin")
+    @UserInterfaceInfoChanged
     public BaseResponse<Boolean> updateInterfaceInfo(@RequestBody InterfaceInfoUpdateRequest interfaceInfoUpdateRequest,
                                                      HttpServletRequest request) {
         if (interfaceInfoUpdateRequest == null || interfaceInfoUpdateRequest.getId() <= 0) {

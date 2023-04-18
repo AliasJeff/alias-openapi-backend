@@ -2,9 +2,14 @@ package com.alias.openapiservice.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.digest.DigestUtil;
+import com.alias.openapicommon.model.entity.InterfaceInfo;
+import com.alias.openapicommon.model.entity.UserInterfaceInfo;
 import com.alias.openapiservice.common.ErrorCode;
 import com.alias.openapiservice.exception.BusinessException;
+import com.alias.openapiservice.mapper.UserInterfaceInfoMapper;
 import com.alias.openapiservice.mapper.UserMapper;
+import com.alias.openapiservice.service.InterfaceInfoService;
+import com.alias.openapiservice.service.UserInterfaceInfoService;
 import com.alias.openapiservice.service.UserService;
 import com.alias.openapicommon.model.entity.User;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -17,6 +22,12 @@ import org.springframework.util.DigestUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import static com.alias.openapiservice.constant.UserConstant.ADMIN_ROLE;
 import static com.alias.openapiservice.constant.UserConstant.USER_LOGIN_STATE;
 
@@ -25,6 +36,8 @@ import static com.alias.openapiservice.constant.UserConstant.USER_LOGIN_STATE;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Resource
     private UserMapper userMapper;
+
+    private final Lock lock = new ReentrantLock();
 
     /**
      * 盐值，混淆密码
@@ -52,7 +65,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!password.equals(checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
         }
-        synchronized (account.intern()) {
+
+        // 2. 加密
+        String encryptPassword = DigestUtils.md5DigestAsHex((SALT + password).getBytes());
+
+        // 3. 分配accessKey、secretKey
+        String accessKey = DigestUtil.md5Hex(SALT + account + RandomUtil.randomNumbers(4));
+        String secretKey = DigestUtil.md5Hex(SALT + account + RandomUtil.randomNumbers(8));
+
+        // 4. 插入数据
+        User user = new User();
+        user.setAccount(account);
+        user.setPassword(encryptPassword);
+        user.setAccessKey(accessKey);
+        user.setSecretKey(secretKey);
+
+        // 加锁
+        lock.lock();
+        try {
             // 账户不能重复
             QueryWrapper<User> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("account", account);
@@ -61,28 +91,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
             }
 
-            // 2. 加密
-            String encryptPassword = DigestUtils.md5DigestAsHex((SALT + password).getBytes());
-
-            // 3. 分配accessKey、secretKey
-            String accessKey = DigestUtil.md5Hex(SALT + account + RandomUtil.randomNumbers(4));
-            String secretKey = DigestUtil.md5Hex(SALT + account + RandomUtil.randomNumbers(8));
-
-            // 3. 插入数据
-            User user = new User();
-            user.setAccount(account);
-            user.setPassword(encryptPassword);
-            user.setAccessKey(accessKey);
-            user.setSecretKey(secretKey);
-
             boolean saveResult = this.save(user);
             if (!saveResult) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");
             }
-
+//
+//            // 5. 查找到新注册的user的id，分配接口调用次数
+//            boolean addResult = userInterfaceInfoService.addUserInterfaceInfo(user.getId());
+//            if (!addResult) {
+//                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "初始化接口调用次数失败");
+//            }
             return user.getId();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // 释放锁
+            lock.unlock();
         }
+        return null;
     }
+
 
     @Override
     public User login(HttpServletRequest request, String account, String password) {

@@ -6,25 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 权限校验
+ * 更新初始化用户调用接口次数
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface AuthCheck {
-
-    /**
-     * 有任何一个角色
-     *
-     * @return
-     */
-    String[] anyRole() default "";
-
-    /**
-     * 必须有某个角色
-     *
-     * @return
-     */
-    String mustRole() default "";
-
+public @interface UserInterfaceInfoChanged {
 }
-

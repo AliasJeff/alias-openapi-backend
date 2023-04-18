@@ -1,5 +1,6 @@
 package com.alias.openapiservice.controller;
 
+import com.alias.openapiservice.annotation.UserInterfaceInfoChanged;
 import com.alias.openapiservice.common.BaseResponse;
 import com.alias.openapiservice.common.DeleteRequest;
 import com.alias.openapiservice.common.ErrorCode;
@@ -37,6 +38,7 @@ public class UserController {
      * @return
      */
     @PostMapping("/register")
+    @UserInterfaceInfoChanged
     public BaseResponse<Long> register(@RequestBody UserRegisterRequest userRegisterRequest) {
         if (userRegisterRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -105,7 +107,7 @@ public class UserController {
      * @return
      */
     @GetMapping("/currentUser")
-    @CrossOrigin(origins = "http://localhost:8080",allowCredentials = "true")
+    @CrossOrigin(origins = "http://localhost:8080", allowCredentials = "true")
     public BaseResponse<UserVO> getLoginUser(HttpServletRequest request) {
         log.info("current user...");
         User user = userService.getLoginUser(request);
@@ -122,6 +124,7 @@ public class UserController {
      * @return
      */
     @PostMapping("/add")
+    @UserInterfaceInfoChanged
     public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest, HttpServletRequest request) {
         if (userAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -143,6 +146,7 @@ public class UserController {
      * @return
      */
     @PostMapping("/delete")
+    @UserInterfaceInfoChanged
     public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -159,6 +163,7 @@ public class UserController {
      * @return
      */
     @PostMapping("/update")
+    @UserInterfaceInfoChanged
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
         if (userUpdateRequest == null || userUpdateRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);

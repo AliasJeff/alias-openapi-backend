@@ -10,6 +10,11 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface UserInterfaceInfoService extends IService<UserInterfaceInfo> {
 
+    /**
+     * 初始化接口免费调用次数
+     */
+    void addUserInterfaceInfo();
+
     void validUserInterfaceInfo(UserInterfaceInfo userInterfaceInfo, boolean add);
 
     /**

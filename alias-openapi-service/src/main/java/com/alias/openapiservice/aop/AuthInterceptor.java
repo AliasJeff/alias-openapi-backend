@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 
 /**
  * 权限校验 AOP
- *
- * 
  */
 @Aspect
 @Component
