@@ -158,6 +158,7 @@ public class InterfaceInfoController {
         // 验证接口是否可以调用
         User user = new User();
         user.setUsername("test");
+        // todo 验证接口是否可以调用
         String username = aliasOpenapiClient.getUsernameByPost(user);
         if (StringUtils.isBlank(username)) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口验证失败");

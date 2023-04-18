@@ -40,6 +40,11 @@ public class InterfaceInfoAddRequest implements Serializable {
     private String responseHeader;
 
     /**
+     * 计费规则(元/条)
+     */
+    private Float price;
+
+    /**
      * 接口状态（0-关闭，1-开启）
      */
     private Integer status;

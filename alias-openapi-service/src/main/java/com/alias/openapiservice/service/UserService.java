@@ -8,6 +8,14 @@ import javax.servlet.http.HttpServletRequest;
 
 @Service
 public interface UserService extends IService<User> {
+
+    /**
+     * 发送邮箱验证码
+     * @param toEmail
+     * @return
+     */
+    boolean sendEmail(String toEmail);
+
     /**
      * 用户注册
      *
@@ -16,7 +24,7 @@ public interface UserService extends IService<User> {
      * @param checkPassword
      * @return 新用户id
      */
-    Long register(String account, String password, String checkPassword);
+    Long register(String account, String password, String checkPassword, String email, String code);
 
     /**
      * 用户登录

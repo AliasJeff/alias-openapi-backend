@@ -32,6 +32,25 @@ public class UserController {
     private UserService userService;
 
     /**
+     * 发送邮箱验证码
+     * @param email
+     * @return
+     */
+    @PostMapping("/sendEmail")
+    public BaseResponse<String> sendEmail(String email) {
+        if (email == null || StringUtils.isBlank(email)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        boolean b = userService.sendEmail(email);
+        if (b) {
+            return ResultUtils.success("发送验证码成功");
+        } else {
+            return ResultUtils.error(ErrorCode.SYSTEM_ERROR);
+        }
+    }
+
+    /**
      * 用户注册
      *
      * @param userRegisterRequest
@@ -47,12 +66,14 @@ public class UserController {
         String userAccount = userRegisterRequest.getAccount();
         String userPassword = userRegisterRequest.getPassword();
         String checkPassword = userRegisterRequest.getCheckPassword();
+        String email = userRegisterRequest.getEmail();
+        String code = userRegisterRequest.getEmail();
 
         if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
-        Long result = userService.register(userAccount, userPassword, checkPassword);
+        Long result = userService.register(userAccount, userPassword, checkPassword, email, code);
 
         return ResultUtils.success(result);
     }

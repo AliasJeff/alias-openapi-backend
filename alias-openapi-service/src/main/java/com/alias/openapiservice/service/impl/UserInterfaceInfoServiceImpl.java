@@ -15,7 +15,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.alias.openapiservice.mapper.UserInterfaceInfoMapper;
 import com.alias.openapiservice.service.UserInterfaceInfoService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

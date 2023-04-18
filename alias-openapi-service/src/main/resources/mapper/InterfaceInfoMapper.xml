@@ -12,6 +12,7 @@
             <result property="requestParams" column="request_params" jdbcType="VARCHAR"/>
             <result property="requestHeader" column="request_header" jdbcType="VARCHAR"/>
             <result property="responseHeader" column="response_header" jdbcType="VARCHAR"/>
+            <result property="price" column="price" jdbcType="DECIMAL"/>
             <result property="status" column="status" jdbcType="INTEGER"/>
             <result property="method" column="method" jdbcType="VARCHAR"/>
             <result property="creator" column="creator" jdbcType="BIGINT"/>
@@ -23,7 +24,7 @@
     <sql id="Base_Column_List">
         id,name,description,
         url,request_params,request_header,response_header,
-        status,method,creator,
+        price,status,method,creator,
         create_time,update_time,is_delete
     </sql>
 </mapper>

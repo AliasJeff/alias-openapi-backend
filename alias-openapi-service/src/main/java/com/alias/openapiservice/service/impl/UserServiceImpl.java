@@ -12,10 +12,15 @@ import com.alias.openapiservice.service.InterfaceInfoService;
 import com.alias.openapiservice.service.UserInterfaceInfoService;
 import com.alias.openapiservice.service.UserService;
 import com.alias.openapicommon.model.entity.User;
+import com.alias.openapiservice.util.ValidateCodeUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
@@ -25,6 +30,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -34,8 +41,18 @@ import static com.alias.openapiservice.constant.UserConstant.USER_LOGIN_STATE;
 @Slf4j
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
     @Resource
     private UserMapper userMapper;
+
+    @Resource
+    private JavaMailSender javaMailSender;
+
+    @Resource
+    private RedisTemplate redisTemplate;
+
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
     private final Lock lock = new ReentrantLock();
 
@@ -45,7 +62,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final String SALT = "alias";
 
     @Override
-    public Long register(String account, String password, String checkPassword) {
+    public Long register(String account, String password, String checkPassword, String email, String code) {
         // 1. 校验
         if (StringUtils.isAnyBlank(account, password, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
@@ -77,6 +94,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User user = new User();
         user.setAccount(account);
         user.setPassword(encryptPassword);
+        user.setEmail(email);
         user.setAccessKey(accessKey);
         user.setSecretKey(secretKey);
 
@@ -91,20 +109,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
             }
 
+            if (Objects.equals(redisTemplate.opsForValue().get(email), code)) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
+            }
+
             boolean saveResult = this.save(user);
             if (!saveResult) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");
             }
-//
-//            // 5. 查找到新注册的user的id，分配接口调用次数
-//            boolean addResult = userInterfaceInfoService.addUserInterfaceInfo(user.getId());
-//            if (!addResult) {
-//                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "初始化接口调用次数失败");
-//            }
+
             return user.getId();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
+            if (redisTemplate.opsForValue().get(email) != null) {
+                // 删除验证码
+                redisTemplate.delete(email);
+            }
             // 释放锁
             lock.unlock();
         }
@@ -208,5 +229,37 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 移除登录态
         request.getSession().removeAttribute(USER_LOGIN_STATE);
         return true;
+    }
+
+    @Override
+    public boolean sendEmail(String toEmail) {
+        if (toEmail == null || StringUtils.isBlank(toEmail)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请填写邮箱地址");
+        }
+
+        String code = ValidateCodeUtils.generateValidateCode(4).toString();
+        log.info("code = {}", code);
+
+        SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+        //设置发件邮箱
+        simpleMailMessage.setFrom(fromEmail);
+        //收件人邮箱
+        simpleMailMessage.setTo(toEmail);
+        //主题标题
+        simpleMailMessage.setSubject("ALIAS-API开放平台验证码");
+        //信息内容
+        simpleMailMessage.setText("您的验证码是：" + code + "\n" + "五分钟内有效");
+        //执行发送
+        try {//发送可能失败
+            javaMailSender.send(simpleMailMessage);
+            //将生成的验证码缓存到redis中，设置有效期为5分钟
+            redisTemplate.opsForValue().set(toEmail, code, 5, TimeUnit.MINUTES);
+            //没有异常返回true，表示发送成功
+            return true;
+        } catch (Exception e) {
+            //发送失败，返回false
+            e.printStackTrace();
+        }
+        return false;
     }
 }

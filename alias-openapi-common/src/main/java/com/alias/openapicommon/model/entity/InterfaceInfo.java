@@ -36,6 +36,11 @@ public class InterfaceInfo implements Serializable {
     private String url;
 
     /**
+     * 计费规则(元/条)
+     */
+    private Float price;
+
+    /**
      * 请求参数
      */
     private String requestParams;
