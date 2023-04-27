@@ -21,10 +21,19 @@
             <result property="isDelete" column="is_delete" jdbcType="TINYINT"/>
     </resultMap>
 
-    <sql id="Base_Column_List">
-        id,name,description,
-        url,request_params,request_header,response_header,
-        price,status,method,creator,
-        create_time,update_time,is_delete
-    </sql>
+    <select id="getInterfaceInfoByUserId" resultMap="BaseResultMap">
+        SELECT
+        ii.id AS `id`, ii.name AS `name`, ii.description AS `description`,
+        ii.method AS `method`, ii.request_params AS `requestParams`,
+        ii.request_header AS `requestHeader`, ii.price AS `price`,
+        ii.url AS `url`, ui.left_num AS `leftNum`
+        FROM
+        user_interface_info ui
+        LEFT JOIN interface_info ii ON ii.id = ui.interface_info_id
+        WHERE
+        ui.user_id = #{userId} AND ui.left_num > 0 AND ui.is_delete = 0 AND (ii.is_delete = 0 OR ii.is_delete IS NULL)
+        <if test="ew != null">
+            ${ew.customSqlSegment}
+        </if>
+    </select>
 </mapper>

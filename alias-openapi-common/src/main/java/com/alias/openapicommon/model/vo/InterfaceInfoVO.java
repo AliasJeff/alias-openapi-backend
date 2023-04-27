@@ -2,6 +2,7 @@ package com.alias.openapicommon.model.vo;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -53,6 +54,12 @@ public class InterfaceInfoVO implements Serializable {
      * 计费规则(元/条)
      */
     private Float price;
+
+    /**
+     * 剩余次数
+     */
+    @TableField(exist = false)
+    private Integer leftNum;
 
     /**
      * 接口状态（0-关闭，1-开启）

@@ -1,7 +1,14 @@
 package com.alias.openapiservice.service;
 
+import com.alias.openapicommon.model.entity.InterfaceInfo;
 import com.alias.openapicommon.model.entity.UserInterfaceInfo;
+import com.alias.openapiservice.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.w3c.dom.stylesheets.LinkStyle;
+
+import java.util.List;
 
 /**
 * @author zhexun
@@ -24,4 +31,12 @@ public interface UserInterfaceInfoService extends IService<UserInterfaceInfo> {
      * @return
      */
     boolean invokeCount(long interfaceInfoId, long userId);
+
+    /**
+     * 获取用户可用接口
+     * @param interfaceInfoQueryRequest
+     * @param userId
+     * @return
+     */
+    IPage<InterfaceInfo> getAvailableInterfaceInfo(InterfaceInfoQueryRequest interfaceInfoQueryRequest, long userId);
 }

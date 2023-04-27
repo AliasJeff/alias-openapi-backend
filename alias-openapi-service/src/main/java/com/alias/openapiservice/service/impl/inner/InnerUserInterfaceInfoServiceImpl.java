@@ -12,6 +12,12 @@ public class InnerUserInterfaceInfoServiceImpl implements InnerUserInterfaceInfo
     @Resource
     private UserInterfaceInfoService userInterfaceInfoService;
 
+    /**
+     * 调用次数计数
+     * @param interfaceInfoId
+     * @param userId
+     * @return
+     */
     @Override
     public boolean invokeCount(long interfaceInfoId, long userId) {
         return userInterfaceInfoService.invokeCount(interfaceInfoId, userId);

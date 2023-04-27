@@ -3,6 +3,7 @@ package com.alias.openapiservice.model.vo;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -49,6 +50,12 @@ public class InterfaceInfoVO implements Serializable {
      * 响应头
      */
     private String responseHeader;
+
+    /**
+     * 剩余次数
+     */
+    @TableField(exist = false)
+    private Integer leftNum;
 
     /**
      * 接口状态（0-关闭，1-开启）

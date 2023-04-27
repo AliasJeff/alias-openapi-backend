@@ -3,10 +3,15 @@ package com.alias.openapiservice.service.impl;
 import com.alias.openapicommon.model.entity.InterfaceInfo;
 import com.alias.openapicommon.model.entity.User;
 import com.alias.openapiservice.common.ErrorCode;
+import com.alias.openapiservice.common.PageRequest;
+import com.alias.openapiservice.constant.CommonConstant;
 import com.alias.openapiservice.exception.BusinessException;
 import com.alias.openapicommon.model.entity.UserInterfaceInfo;
+import com.alias.openapiservice.mapper.InterfaceInfoMapper;
+import com.alias.openapiservice.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
 import com.alias.openapiservice.service.InterfaceInfoService;
 import com.alias.openapiservice.service.UserService;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -14,13 +19,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.alias.openapiservice.mapper.UserInterfaceInfoMapper;
 import com.alias.openapiservice.service.UserInterfaceInfoService;
+import com.github.yulichang.query.MPJQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author zhexun
@@ -37,6 +45,9 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
 
     @Resource
     private InterfaceInfoService interfaceInfoService;
+
+    @Resource
+    private InterfaceInfoMapper interfaceInfoMapper;
 
     /**
      * todo 优化代码
@@ -169,17 +180,14 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         // 根据ID获取接口信息对象
-        UserInterfaceInfo userInterfaceInfo = this.getById(interfaceInfoId);
+        QueryWrapper<UserInterfaceInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("interface_info_id", interfaceInfoId);
+        UserInterfaceInfo userInterfaceInfo = this.getOne(queryWrapper);
         if (userInterfaceInfo == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
-        }
-        // 获取锁定的接口信息对象，确保多个线程同时执行invokeCount方法时，只有一个线程能够修改对象，其他线程需要等待锁释放后才能进行修改
-        UserInterfaceInfo lockedUserInterfaceInfo = this.getBaseMapper().selectByIdForUpdate(interfaceInfoId);
-        if (lockedUserInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "接口不存在");
         }
         // 判断剩余次数是否足够
-        if (lockedUserInterfaceInfo.getLeftNum() <= 0) {
+        if (userInterfaceInfo.getLeftNum() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "调用次数不足");
         }
         // 构造UpdateWrapper对象，设置更新条件和更新内容
@@ -189,5 +197,32 @@ public class UserInterfaceInfoServiceImpl extends ServiceImpl<UserInterfaceInfoM
         updateWrapper.setSql("left_num = left_num - 1, total_num = total_num + 1");
         // 执行更新操作
         return this.update(updateWrapper);
+    }
+
+    @Override
+    @Transactional
+    public IPage<InterfaceInfo> getAvailableInterfaceInfo(InterfaceInfoQueryRequest interfaceInfoQueryRequest, long userId) {
+        if (userId == 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        long current = interfaceInfoQueryRequest.getCurrent();
+        long size = interfaceInfoQueryRequest.getPageSize();
+
+        // 限制爬虫
+        if (size > 50) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        PageRequest pageRequest = new PageRequest();
+        pageRequest.setCurrent(current);
+        pageRequest.setPageSize(size);
+        pageRequest.setSortField(interfaceInfoQueryRequest.getSortField());
+        pageRequest.setSortOrder(interfaceInfoQueryRequest.getSortOrder());
+
+        Page<InterfaceInfo> page = new Page<>(current, size);
+        QueryWrapper<InterfaceInfo> wrapper = new QueryWrapper<>();
+
+        return interfaceInfoMapper.getInterfaceInfoByUserId(page, userId, wrapper);
     }
 }

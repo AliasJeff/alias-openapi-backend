@@ -23,7 +23,7 @@ public class InnerUserServiceImpl implements InnerUserService {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("accessKey", accessKey);
+        queryWrapper.eq("access_key", accessKey);
         return userMapper.selectOne(queryWrapper);
     }
 }

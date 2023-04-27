@@ -1,6 +1,7 @@
 package com.alias.openapiservice.model.dto.user;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;

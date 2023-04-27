@@ -64,7 +64,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public Long register(String account, String password, String checkPassword, String email, String code) {
         // 1. 校验
-        if (StringUtils.isAnyBlank(account, password, checkPassword)) {
+        if (StringUtils.isAnyBlank(account, password, checkPassword, email, code)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
         }
         if (account.length() < 4) {

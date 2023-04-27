@@ -1,18 +1,23 @@
 package com.alias.openapiservice.controller;
 
 import com.alias.clientsdk.client.AliasOpenapiClient;
+import com.alias.openapicommon.model.entity.InterfaceInfo;
 import com.alias.openapiservice.annotation.AuthCheck;
 import com.alias.openapiservice.common.*;
 import com.alias.openapiservice.constant.CommonConstant;
 import com.alias.openapiservice.exception.BusinessException;
+import com.alias.openapiservice.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
 import com.alias.openapiservice.model.dto.userInterfaceInfo.UserInterfaceInfoAddRequest;
 import com.alias.openapiservice.model.dto.userInterfaceInfo.UserInterfaceInfoQueryRequest;
 import com.alias.openapiservice.model.dto.userInterfaceInfo.UserInterfaceInfoUpdateRequest;
+import com.alias.openapiservice.model.vo.InterfaceInfoVO;
+import com.alias.openapiservice.service.InterfaceInfoService;
 import com.alias.openapiservice.service.UserInterfaceInfoService;
 import com.alias.openapiservice.service.UserService;
 import com.alias.openapicommon.model.entity.User;
 import com.alias.openapicommon.model.entity.UserInterfaceInfo;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/userInterfaceInfo")
@@ -31,6 +37,9 @@ public class UserInterfaceInfoController {
 
     @Resource
     private UserInterfaceInfoService userInterfaceInfoService;
+
+    @Resource
+    private InterfaceInfoService interfaceInfoService;
 
     @Resource
     private UserService userService;
@@ -139,6 +148,18 @@ public class UserInterfaceInfoController {
         }
         UserInterfaceInfo userInterfaceInfo = userInterfaceInfoService.getById(id);
         return ResultUtils.success(userInterfaceInfo);
+    }
+
+    @GetMapping("/available")
+    public BaseResponse<IPage<InterfaceInfo>> getAvailableInterfaceInfo(InterfaceInfoQueryRequest interfaceInfoQueryRequest, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null || loginUser.getId() == 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在");
+        }
+
+        long userId = loginUser.getId();
+
+        return ResultUtils.success(userInterfaceInfoService.getAvailableInterfaceInfo(interfaceInfoQueryRequest, userId));
     }
 
     /**

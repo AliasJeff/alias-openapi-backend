@@ -6,6 +6,7 @@ import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
 import com.alias.openapicommon.model.entity.User;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +17,7 @@ import static com.alias.clientsdk.utils.SignUtils.genSign;
 /**
  * 调用第三方接口的客户端
  */
+@Slf4j
 public class AliasOpenapiClient {
 
     private static final String GATEWAY_HOST = "http://localhost:8090";
@@ -60,14 +62,15 @@ public class AliasOpenapiClient {
     }
 
     public String getUsernameByPost(User user) {
+        log.info("参数User: {}", user.toString());
         String json = JSONUtil.toJsonStr(user);
         HttpResponse httpResponse = HttpRequest.post(GATEWAY_HOST + "/api/name/user")
                 .addHeaders(getHeaderMap(json))
                 .body(json)
                 .execute();
-        System.out.println(httpResponse.getStatus());
+        log.info("状态码: {}", httpResponse.getStatus());
         String result = httpResponse.body();
-        System.out.println(result);
+        log.info("返回结果: {}", result);
         return result;
     }
 }

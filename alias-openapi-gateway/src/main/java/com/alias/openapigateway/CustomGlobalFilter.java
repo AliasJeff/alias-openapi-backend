@@ -3,9 +3,11 @@ package com.alias.openapigateway;
 import com.alias.clientsdk.utils.SignUtils;
 import com.alias.openapicommon.model.entity.InterfaceInfo;
 import com.alias.openapicommon.model.entity.User;
+import com.alias.openapicommon.model.entity.UserInterfaceInfo;
 import com.alias.openapicommon.service.InnerInterfaceInfoService;
 import com.alias.openapicommon.service.InnerUserInterfaceInfoService;
 import com.alias.openapicommon.service.InnerUserService;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.reactivestreams.Publisher;
@@ -95,7 +97,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         if ((currentTime - Long.parseLong(timestamp)) >= FIVE_MINUTES) {
             return handleNoAuth(response);
         }
-        // 实际情况中是从数据库中查出 secretKey
+        // 从数据库中查出 secretKey
         String secretKey = invokeUser.getSecretKey();
         String serverSign = SignUtils.genSign(body, secretKey);
         if (sign == null || !sign.equals(serverSign)) {
@@ -112,6 +114,10 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
             return handleNoAuth(response);
         }
         // todo 是否还有调用次数
+//        QueryWrapper<UserInterfaceInfo> queryWrapper = new QueryWrapper<>();
+//        queryWrapper.eq("user_id", invokeUser.getId());
+//        queryWrapper.eq("interface_info_id", interfaceInfo.getId());
+//        UserInterfaceInfo userInterfaceInfo =
         // 5. 请求转发，调用模拟接口 + 响应日志
         //        Mono<Void> filter = chain.filter(exchange);
         //        return filter;
@@ -126,13 +132,15 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
      * @param chain
      * @return
      */
-    public Mono<Void> handleResponse(ServerWebExchange exchange, GatewayFilterChain chain, long interfaceInfoId, long userId) {
+    private Mono<Void> handleResponse(ServerWebExchange exchange, GatewayFilterChain chain, long interfaceInfoId, long userId) {
+        ServerHttpRequest request = exchange.getRequest();
         try {
             ServerHttpResponse originalResponse = exchange.getResponse();
             // 缓存数据的工厂
             DataBufferFactory bufferFactory = originalResponse.bufferFactory();
             // 拿到响应码
             HttpStatus statusCode = originalResponse.getStatusCode();
+            log.info("响应码: {}", statusCode);
             if (statusCode == HttpStatus.OK) {
                 // 装饰，增强能力
                 ServerHttpResponseDecorator decoratedResponse = new ServerHttpResponseDecorator(originalResponse) {
@@ -148,7 +156,8 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
                                     fluxBody.map(dataBuffer -> {
                                         // 7. 调用成功，接口调用次数 + 1 invokeCount
                                         try {
-                                            innerUserInterfaceInfoService.invokeCount(interfaceInfoId, userId);
+                                            boolean b = innerUserInterfaceInfoService.invokeCount(interfaceInfoId, userId);
+                                            log.info("<-------修改接口调用次数：{}", b ? "成功" : "失败");
                                         } catch (Exception e) {
                                             log.error("invokeCount error", e);
                                         }
@@ -163,6 +172,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
                                         sb2.append(data);
                                         // 打印日志
                                         log.info("响应结果：" + data);
+                                        log.info("=====  {} 结束 =====", request.getId());
                                         return bufferFactory.wrap(content);
                                     }));
                         } else {
@@ -172,12 +182,15 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
                         return super.writeWith(body);
                     }
                 };
-                // 设置 response 对象为装饰过的
+                //设置response对象为装饰过的
                 return chain.filter(exchange.mutate().response(decoratedResponse).build());
             }
-            return chain.filter(exchange); // 降级处理返回数据
+            // 降级处理返回数据
+            log.info("=====  {} 结束 =====", request.getId());
+            return chain.filter(exchange);
         } catch (Exception e) {
             log.error("网关处理响应异常" + e);
+            log.info("=====  {} 结束 =====", request.getId());
             return chain.filter(exchange);
         }
     }

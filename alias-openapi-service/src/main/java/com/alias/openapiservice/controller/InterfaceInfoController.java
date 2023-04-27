@@ -150,6 +150,7 @@ public class InterfaceInfoController {
 
         // 判断接口是否存在
         long id = idRequest.getId();
+        log.info("id: {}", id);
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
@@ -158,11 +159,11 @@ public class InterfaceInfoController {
         // 验证接口是否可以调用
         User user = new User();
         user.setUsername("test");
-        // todo 验证接口是否可以调用
-        String username = aliasOpenapiClient.getUsernameByPost(user);
-        if (StringUtils.isBlank(username)) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口验证失败");
-        }
+        // todo 验证接口是否可以调用，修改调用
+//        String username = aliasOpenapiClient.getUsernameByPost(user);
+//        if (StringUtils.isBlank(username)) {
+//            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口验证失败");
+//        }
 
         // 更新状态
         InterfaceInfo newInterfaceInfo = new InterfaceInfo();
@@ -197,7 +198,7 @@ public class InterfaceInfoController {
         // 更新接口状态
         InterfaceInfo newInterfaceInfo = new InterfaceInfo();
         newInterfaceInfo.setId(id);
-        newInterfaceInfo.setStatus(1);
+        newInterfaceInfo.setStatus(0);
         boolean result = interfaceInfoService.updateById(newInterfaceInfo);
         return ResultUtils.success(result);
     }
@@ -236,6 +237,10 @@ public class InterfaceInfoController {
         AliasOpenapiClient client = new AliasOpenapiClient(accessKey, secretKey);
         Gson gson = new Gson();
         User user = gson.fromJson(userRequestParams, User.class);
+        log.info("userRequestParams: {}", userRequestParams);
+        log.info("user in userRequestParams: {}", user.toString());
+        System.out.println("user param: " + user.toString());
+        // todo 修改接口调用
         String usernameByPost = client.getUsernameByPost(user);
         return ResultUtils.success(usernameByPost);
     }
@@ -252,6 +257,9 @@ public class InterfaceInfoController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
+        if (interfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
         return ResultUtils.success(interfaceInfo);
     }
 
