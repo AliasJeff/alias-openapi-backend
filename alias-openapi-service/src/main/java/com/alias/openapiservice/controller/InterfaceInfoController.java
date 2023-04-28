@@ -1,6 +1,7 @@
 package com.alias.openapiservice.controller;
 
-import com.alias.clientsdk.client.AliasOpenapiClient;
+import com.alias.clientsdk.client.ApiClient;
+import com.alias.clientsdk.model.Api;
 import com.alias.openapiservice.annotation.AuthCheck;
 import com.alias.openapiservice.annotation.UserInterfaceInfoChanged;
 import com.alias.openapiservice.common.*;
@@ -16,7 +17,6 @@ import com.alias.openapicommon.model.entity.InterfaceInfo;
 import com.alias.openapicommon.model.entity.User;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -37,9 +37,6 @@ public class InterfaceInfoController {
 
     @Resource
     private UserService userService;
-
-    @Resource
-    private AliasOpenapiClient aliasOpenapiClient;
 
     /**
      * 创建
@@ -211,15 +208,18 @@ public class InterfaceInfoController {
      * @return
      */
     @PostMapping("/invoke")
-    public BaseResponse<Object> invokeInterfaceInfo(@RequestBody InterfaceInfoInvokeRequest interfaceInfoInvokeRequest,
+    public BaseResponse<Object> invokeInterface(@RequestBody InterfaceInfoInvokeRequest interfaceInfoInvokeRequest,
                                                     HttpServletRequest request) {
         if (interfaceInfoInvokeRequest == null || interfaceInfoInvokeRequest.getId() == 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
-        // 判断接口是否存在
         long id = interfaceInfoInvokeRequest.getId();
         String userRequestParams = interfaceInfoInvokeRequest.getUserRequestParams();
+        String method = interfaceInfoInvokeRequest.getMethod();
+        String url = interfaceInfoInvokeRequest.getUrl();
+
+        // 判断接口是否存在
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
@@ -227,22 +227,32 @@ public class InterfaceInfoController {
 
         // 判断接口是否已关闭
         if (oldInterfaceInfo.getStatus() == 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "接口已关闭");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口已关闭");
+        }
+
+        // 判断请求方法、请求地址是否为空
+        if (StringUtils.isAnyBlank(method, url)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         // 接口调用
         User loginUser = userService.getLoginUser(request);
         String accessKey = loginUser.getAccessKey();
         String secretKey = loginUser.getSecretKey();
-        AliasOpenapiClient client = new AliasOpenapiClient(accessKey, secretKey);
-        Gson gson = new Gson();
-        User user = gson.fromJson(userRequestParams, User.class);
-        log.info("userRequestParams: {}", userRequestParams);
-        log.info("user in userRequestParams: {}", user.toString());
-        System.out.println("user param: " + user.toString());
-        // todo 修改接口调用
-        String usernameByPost = client.getUsernameByPost(user);
-        return ResultUtils.success(usernameByPost);
+
+        Api api = new Api();
+        api.setInterfaceId(String.valueOf(id));
+        api.setId(loginUser.getId());
+        api.setAccount(loginUser.getAccount());
+        api.setBody(userRequestParams);
+        api.setUrl(url);
+        api.setMethod(method);
+
+        Integer appId = 123; // todo appid
+        ApiClient apiClient = new ApiClient(appId, accessKey, secretKey);
+        String result = apiClient.getResult(api);
+
+        return ResultUtils.success(result);
     }
 
     /**

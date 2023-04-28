@@ -14,4 +14,12 @@ public interface InnerInterfaceInfoService {
      * @return
      */
     InterfaceInfo getInterfaceInfo(String path, String method);
+
+    /**
+     * 查询用户是否还有调用次数
+     * @param interfaceId
+     * @param userId
+     * @return
+     */
+    boolean hasCount(Long interfaceId, Long userId);
 }

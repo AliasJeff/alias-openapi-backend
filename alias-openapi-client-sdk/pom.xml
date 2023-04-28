@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>alias-openapi-client-sdk</artifactId>
+    <version>0.0.3</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -20,7 +21,7 @@
         <dependency>
             <groupId>com.alias</groupId>
             <artifactId>alias-openapi-common</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.3</version>
         </dependency>
 
         <dependency>

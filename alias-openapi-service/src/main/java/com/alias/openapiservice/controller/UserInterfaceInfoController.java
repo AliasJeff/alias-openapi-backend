@@ -1,6 +1,5 @@
 package com.alias.openapiservice.controller;
 
-import com.alias.clientsdk.client.AliasOpenapiClient;
 import com.alias.openapicommon.model.entity.InterfaceInfo;
 import com.alias.openapiservice.annotation.AuthCheck;
 import com.alias.openapiservice.common.*;
@@ -10,7 +9,6 @@ import com.alias.openapiservice.model.dto.interfaceInfo.InterfaceInfoQueryReques
 import com.alias.openapiservice.model.dto.userInterfaceInfo.UserInterfaceInfoAddRequest;
 import com.alias.openapiservice.model.dto.userInterfaceInfo.UserInterfaceInfoQueryRequest;
 import com.alias.openapiservice.model.dto.userInterfaceInfo.UserInterfaceInfoUpdateRequest;
-import com.alias.openapiservice.model.vo.InterfaceInfoVO;
 import com.alias.openapiservice.service.InterfaceInfoService;
 import com.alias.openapiservice.service.UserInterfaceInfoService;
 import com.alias.openapiservice.service.UserService;
@@ -27,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/userInterfaceInfo")
@@ -43,9 +40,6 @@ public class UserInterfaceInfoController {
 
     @Resource
     private UserService userService;
-
-    @Resource
-    private AliasOpenapiClient aliasOpenapiClient;
 
     /**
      * 创建

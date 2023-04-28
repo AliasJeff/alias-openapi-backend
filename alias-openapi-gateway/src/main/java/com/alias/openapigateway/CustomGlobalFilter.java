@@ -1,5 +1,6 @@
 package com.alias.openapigateway;
 
+import cn.hutool.json.ObjectMapper;
 import com.alias.clientsdk.utils.SignUtils;
 import com.alias.openapicommon.model.entity.InterfaceInfo;
 import com.alias.openapicommon.model.entity.User;
@@ -7,8 +8,11 @@ import com.alias.openapicommon.model.entity.UserInterfaceInfo;
 import com.alias.openapicommon.service.InnerInterfaceInfoService;
 import com.alias.openapicommon.service.InnerUserInterfaceInfoService;
 import com.alias.openapicommon.service.InnerUserService;
+import com.alibaba.nacos.common.model.RestResult;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -27,7 +31,10 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.naming.spi.ObjectFactory;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,7 +55,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
     @DubboReference
     private InnerUserInterfaceInfoService innerUserInterfaceInfoService;
 
-    private static final List<String> IP_WHITE_LIST = Arrays.asList("127.0.0.1");
+    private static final List<String> IP_WHITE_LIST = Arrays.asList("127.0.0.1", "/api/apiclient", "/api/user/**");
 
     private static final String INTERFACE_HOST = "http://localhost:8123";
 
@@ -71,13 +78,19 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
             response.setStatusCode(HttpStatus.FORBIDDEN);
             return response.setComplete();
         }
-        // 3. 用户鉴权（判断 ak、sk 是否合法）
+        // 3. 用户鉴权在服务器，这里只做判空
         HttpHeaders headers = request.getHeaders();
         String accessKey = headers.getFirst("accessKey");
         String nonce = headers.getFirst("nonce");
         String timestamp = headers.getFirst("timestamp");
         String sign = headers.getFirst("sign");
         String body = headers.getFirst("body");
+        String userId = headers.getFirst("userId");
+        String interfaceId = headers.getFirst("interfaceId");
+        if (StringUtils.isAnyBlank(accessKey, userId, interfaceId)) {
+            response.setStatusCode(HttpStatus.FORBIDDEN);
+            return response.setComplete();
+        }
 
         User invokeUser = null;
         try {
@@ -91,37 +104,48 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         if (Long.parseLong(nonce) > 10000L) {
             return handleNoAuth(response);
         }
-        // 时间和当前时间不能超过 5 分钟
-        Long currentTime = System.currentTimeMillis() / 1000;
-        final Long FIVE_MINUTES = 60 * 5L;
-        if ((currentTime - Long.parseLong(timestamp)) >= FIVE_MINUTES) {
-            return handleNoAuth(response);
-        }
+        // todo 时间和当前时间不能超过 5 分钟
+//        Instant currentInstant = Instant.now();
+//        Instant requestInstant = Instant.ofEpochSecond(Long.parseLong(timestamp));
+//        Duration duration = Duration.between(requestInstant, currentInstant);
+//        final Duration FIVE_MINUTES_DURATION = Duration.ofMinutes(5);
+//        if (duration.compareTo(FIVE_MINUTES_DURATION) >= 0) {
+//            return handleNoAuth(response);
+//        }
         // 从数据库中查出 secretKey
         String secretKey = invokeUser.getSecretKey();
         String serverSign = SignUtils.genSign(body, secretKey);
         if (sign == null || !sign.equals(serverSign)) {
             return handleNoAuth(response);
         }
-        // 4. 请求的模拟接口是否存在，以及请求方法是否匹配
-        InterfaceInfo interfaceInfo = null;
-        try {
-            interfaceInfo = innerInterfaceInfoService.getInterfaceInfo(path, method);
-        } catch (Exception e) {
-            log.error("getInterfaceInfo error", e);
+//        // 4. 请求的模拟接口是否存在，以及请求方法是否匹配
+//        InterfaceInfo interfaceInfo = null;
+//        try {
+//            interfaceInfo = innerInterfaceInfoService.getInterfaceInfo(path, method);
+//        } catch (Exception e) {
+//            log.error("getInterfaceInfo error", e);
+//        }
+//        if (interfaceInfo == null) {
+//            return handleNoAuth(response);
+//        }
+
+        // 5. 查询用户是否还有调用次数
+        boolean hasCount = innerInterfaceInfoService.hasCount(Long.parseLong(interfaceId), Long.parseLong(userId));
+        if (!hasCount) {
+            // 调用次数不足
+            response.setStatusCode(HttpStatus.FORBIDDEN);
+            DataBufferFactory bufferFactory = response.bufferFactory();
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            DataBuffer wrap = null;
+            try {
+                wrap = bufferFactory.wrap(objectMapper.writeValueAsBytes(new RestResult<>(403, "调用次数不足")));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            DataBuffer finalwrap = wrap;
+            return response.writeWith(Mono.fromSupplier(() -> finalwrap));
         }
-        if (interfaceInfo == null) {
-            return handleNoAuth(response);
-        }
-        // todo 是否还有调用次数
-//        QueryWrapper<UserInterfaceInfo> queryWrapper = new QueryWrapper<>();
-//        queryWrapper.eq("user_id", invokeUser.getId());
-//        queryWrapper.eq("interface_info_id", interfaceInfo.getId());
-//        UserInterfaceInfo userInterfaceInfo =
-        // 5. 请求转发，调用模拟接口 + 响应日志
-        //        Mono<Void> filter = chain.filter(exchange);
-        //        return filter;
-        return handleResponse(exchange, chain, interfaceInfo.getId(), invokeUser.getId());
+        return handleResponse(exchange, chain, Long.parseLong(interfaceId), invokeUser.getId());
 
     }
 

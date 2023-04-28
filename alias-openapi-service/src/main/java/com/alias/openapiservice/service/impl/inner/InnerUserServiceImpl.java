@@ -8,8 +8,12 @@ import com.alias.openapicommon.service.InnerUserService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.context.ApplicationContext;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.Method;
+import java.util.Map;
 
 @DubboService
 public class InnerUserServiceImpl implements InnerUserService {
@@ -26,4 +30,5 @@ public class InnerUserServiceImpl implements InnerUserService {
         queryWrapper.eq("access_key", accessKey);
         return userMapper.selectOne(queryWrapper);
     }
+
 }
