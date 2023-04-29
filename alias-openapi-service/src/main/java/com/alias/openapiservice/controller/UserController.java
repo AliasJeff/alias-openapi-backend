@@ -1,5 +1,6 @@
 package com.alias.openapiservice.controller;
 
+import com.alias.openapicommon.model.vo.UserAuthVO;
 import com.alias.openapiservice.annotation.UserInterfaceInfoChanged;
 import com.alias.openapiservice.common.BaseResponse;
 import com.alias.openapiservice.common.DeleteRequest;
@@ -135,6 +136,19 @@ public class UserController {
         UserVO userVO = new UserVO();
         BeanUtils.copyProperties(user, userVO);
         return ResultUtils.success(userVO);
+    }
+
+    /**
+     * 获取公钥私钥
+     * @param request
+     * @return
+     */
+    @GetMapping("/auth")
+    public BaseResponse<UserAuthVO> getUserAuth(HttpServletRequest request) {
+        User user = userService.getLoginUser(request);
+        UserAuthVO userAuthVO = new UserAuthVO();
+        BeanUtils.copyProperties(user, userAuthVO);
+        return ResultUtils.success(userAuthVO);
     }
 
     /**

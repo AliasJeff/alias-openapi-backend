@@ -25,8 +25,10 @@
         SELECT
         ii.id AS `id`, ii.name AS `name`, ii.description AS `description`,
         ii.method AS `method`, ii.request_params AS `requestParams`,
-        ii.request_header AS `requestHeader`, ii.price AS `price`,
-        ii.url AS `url`, ui.left_num AS `leftNum`
+        ii.request_header AS `requestHeader`, ii.response_header AS `responseHeader`,
+        ii.price AS `price`,
+        ii.url AS `url`, ii.status AS `status`, ii.create_time AS `createTime`,
+        ui.left_num AS `leftNum`
         FROM
         user_interface_info ui
         LEFT JOIN interface_info ii ON ii.id = ui.interface_info_id
