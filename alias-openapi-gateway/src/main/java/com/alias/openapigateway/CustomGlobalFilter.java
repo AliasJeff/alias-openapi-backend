@@ -55,7 +55,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
     @DubboReference
     private InnerUserInterfaceInfoService innerUserInterfaceInfoService;
 
-    private static final List<String> IP_WHITE_LIST = Arrays.asList("127.0.0.1", "/api/apiclient", "/api/user/**");
+    private static final List<String> IP_WHITE_LIST = Arrays.asList("127.0.0.1", "/api/apiclient", "/api/user/**", "/api/soulSoup/**");
 
     private static final String INTERFACE_HOST = "http://localhost:8123";
 
@@ -75,6 +75,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         ServerHttpResponse response = exchange.getResponse();
         // 2. 访问控制 - 黑白名单
         if (!IP_WHITE_LIST.contains(sourceAddress)) {
+            log.error("EXIT at whitelist");
             response.setStatusCode(HttpStatus.FORBIDDEN);
             return response.setComplete();
         }
@@ -88,6 +89,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         String userId = headers.getFirst("userId");
         String interfaceId = headers.getFirst("interfaceId");
         if (StringUtils.isAnyBlank(accessKey, userId, interfaceId)) {
+            log.error("EXIT at authentication");
             response.setStatusCode(HttpStatus.FORBIDDEN);
             return response.setComplete();
         }
@@ -99,9 +101,11 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
             log.error("getInvokeUser error", e);
         }
         if (invokeUser == null) {
+            log.error("EXIT at NoInvokeUser");
             return handleNoAuth(response);
         }
         if (Long.parseLong(nonce) > 10000L) {
+            log.error("EXIT at nonce");
             return handleNoAuth(response);
         }
         // todo 时间和当前时间不能超过 5 分钟
@@ -116,6 +120,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         String secretKey = invokeUser.getSecretKey();
         String serverSign = SignUtils.genSign(body, secretKey);
         if (sign == null || !sign.equals(serverSign)) {
+            log.error("EXIT at sign");
             return handleNoAuth(response);
         }
 //        // 4. 请求的模拟接口是否存在，以及请求方法是否匹配
@@ -133,6 +138,7 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         boolean hasCount = innerInterfaceInfoService.hasCount(Long.parseLong(interfaceId), Long.parseLong(userId));
         if (!hasCount) {
             // 调用次数不足
+            log.error("EXIT at insufficient count");
             response.setStatusCode(HttpStatus.FORBIDDEN);
             DataBufferFactory bufferFactory = response.bufferFactory();
             com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();

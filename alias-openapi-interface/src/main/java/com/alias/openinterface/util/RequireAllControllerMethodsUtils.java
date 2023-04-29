@@ -42,8 +42,9 @@ public class RequireAllControllerMethodsUtils extends WebApplicationObjectSuppor
             String type = handlerMethod.getBeanType().getName();
             //3、获取方法
             String method = handlerMethod.getMethod().getName();
+            System.out.println(patterns.toString());
             hashmap.put(patterns.toString(), type + "-" + method);
         }
-        log.info(hashmap.toString());
+        log.info("hashmap: {}", hashmap.toString());
     }
 }

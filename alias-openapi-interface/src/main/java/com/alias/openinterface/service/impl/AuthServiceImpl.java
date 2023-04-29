@@ -8,6 +8,7 @@ import com.alias.openinterface.util.AuthUtils;
 import com.alias.openinterface.util.RequireAllControllerMethodsUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class AuthServiceImpl extends ServiceImpl<AuthMapper, Auth> implements AuthService {
 
@@ -42,7 +44,11 @@ public class AuthServiceImpl extends ServiceImpl<AuthMapper, Auth> implements Au
             String url = headers.get("url");
             String key = "[" + url + "]" ;
             String res = hashmap.get(key);
+            log.info("url: {}", url);
+            log.info("key: {}", key);
+            log.info("res: {}", res);
             if(res == null){
+                log.error("AuthService...res is null");
                 return null;
             }
             String[] split = res.split("-");
@@ -52,6 +58,7 @@ public class AuthServiceImpl extends ServiceImpl<AuthMapper, Auth> implements Au
                 Class<?> forName = Class.forName(split[0]);
                 //由于是object对象，所以实例化对象需要从容器中拿到
                 Method classMethod = forName.getMethod(split[1], Object.class);
+                log.info("classMethod: {}", classMethod.toString());
                 //调用方法
                 body = classMethod.invoke(context.getBean(forName), headers.get("body"));
             } catch (Exception e) {

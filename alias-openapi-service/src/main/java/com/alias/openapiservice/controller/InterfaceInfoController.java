@@ -218,6 +218,9 @@ public class InterfaceInfoController {
         String userRequestParams = interfaceInfoInvokeRequest.getUserRequestParams();
         String method = interfaceInfoInvokeRequest.getMethod();
         String url = interfaceInfoInvokeRequest.getUrl();
+        log.info("invoke...userRequestParams: {}", userRequestParams);
+        log.info("invoke...method: {}", method);
+        log.info("invoke...url: {}", url);
 
         // 判断接口是否存在
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
