@@ -250,8 +250,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 获取github stars
         String listContent = null;
         try {
-            // todo 获取github stars
-            listContent= HttpUtil.get("https://img.shields.io/github/stars/YukeSeko?style=social");
+            listContent= HttpUtil.get("https://img.shields.io/github/stars/AliasJeff?style=social");
         }catch (Exception e){
             throw new BusinessException(ErrorCode.OPERATION_ERROR,"获取GitHub Starts 超时");
         }
