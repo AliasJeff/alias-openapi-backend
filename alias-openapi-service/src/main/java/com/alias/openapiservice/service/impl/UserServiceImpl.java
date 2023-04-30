@@ -246,6 +246,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (redisStars != null) {
             return redisStars;
         }
+
         // 获取github stars
         String listContent = null;
         try {
