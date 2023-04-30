@@ -1,7 +1,7 @@
 package com.alias.openapiservice.common;
 
 /**
- * 错误码
+ * 自定义错误码
  */
 public enum ErrorCode {
 

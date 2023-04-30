@@ -11,4 +11,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface UserInterfaceInfoChanged {
+    // todo 自定义不同接口的初始化调用次数
 }

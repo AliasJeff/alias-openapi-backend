@@ -1,6 +1,7 @@
 package com.alias.openinterface.controller;
 
 import com.alias.openapicommon.model.entity.User;
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +32,10 @@ public class NameController {
     }
 
     @PostMapping("/user")
-    public String getUsernameByPost(@RequestBody User user) {
-        String result = "(POST) 用户名字是" + user.getUsername();
-        return result;
+    public String getUsernameByPost(Object object) {
+        log.info("name...object: {}", object);
+        Gson gson = new Gson();
+        User user = gson.fromJson(object.toString(), User.class);
+        return "(POST) 用户名字是" + user.getUsername();
     }
 }

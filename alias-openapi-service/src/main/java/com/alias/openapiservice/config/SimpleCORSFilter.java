@@ -13,6 +13,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+/**
+ * 处理跨域请求
+ */
 @Slf4j
 @Configuration
 @Order(Ordered.HIGHEST_PRECEDENCE) // 最高优先级

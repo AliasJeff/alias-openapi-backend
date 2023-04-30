@@ -17,20 +17,30 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.PageDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static com.alias.openapiservice.constant.RedisConstant.INTERFACE_PREFIX;
+import static com.alias.openapiservice.constant.RedisConstant.USER_PREFIX;
 
 @RestController
 @RequestMapping("/user")
 @Slf4j
 @CrossOrigin
 public class UserController {
+
     @Resource
     private UserService userService;
+
+    @Resource
+    private RedisTemplate redisTemplate;
 
     /**
      * 发送邮箱验证码
@@ -170,6 +180,8 @@ public class UserController {
         if (!result) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR);
         }
+        Set keys = redisTemplate.keys(USER_PREFIX + "*");
+        redisTemplate.delete(keys);
         return ResultUtils.success(user.getId());
     }
 
@@ -187,6 +199,8 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         boolean b = userService.removeById(deleteRequest.getId());
+        Set keys = redisTemplate.keys(USER_PREFIX + "*");
+        redisTemplate.delete(keys);
         return ResultUtils.success(b);
     }
 
@@ -206,6 +220,8 @@ public class UserController {
         User user = new User();
         BeanUtils.copyProperties(userUpdateRequest, user);
         boolean result = userService.updateById(user);
+        Set keys = redisTemplate.keys(USER_PREFIX + "*");
+        redisTemplate.delete(keys);
         return ResultUtils.success(result);
     }
 
@@ -221,8 +237,15 @@ public class UserController {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User user = userService.getById(id);
         UserVO userVO = new UserVO();
+        User user = (User) redisTemplate.opsForValue().get(USER_PREFIX + id);
+        if (user != null) {
+            BeanUtils.copyProperties(user, userVO);
+            return ResultUtils.success(userVO);
+        }
+
+        user = userService.getById(id);
+        redisTemplate.opsForValue().set(USER_PREFIX + id, user, 60, TimeUnit.MINUTES);
         BeanUtils.copyProperties(user, userVO);
         return ResultUtils.success(userVO);
     }
@@ -240,13 +263,18 @@ public class UserController {
         if (userQueryRequest != null) {
             BeanUtils.copyProperties(userQueryRequest, userQuery);
         }
+        List<UserVO> userVOList = (List<UserVO>) redisTemplate.opsForValue().get(USER_PREFIX + userQuery.toString());
+        if (userVOList != null) {
+            return ResultUtils.success(userVOList);
+        }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>(userQuery);
         List<User> userList = userService.list(queryWrapper);
-        List<UserVO> userVOList = userList.stream().map(user -> {
+        userVOList = userList.stream().map(user -> {
             UserVO userVO = new UserVO();
             BeanUtils.copyProperties(user, userVO);
             return userVO;
         }).collect(Collectors.toList());
+        redisTemplate.opsForValue().set(USER_PREFIX + userQuery, userVOList, 60, TimeUnit.MINUTES);
         return ResultUtils.success(userVOList);
     }
 
@@ -267,15 +295,33 @@ public class UserController {
             current = userQueryRequest.getCurrent();
             size = userQueryRequest.getPageSize();
         }
+
+        Page<UserVO> userVOPage = (Page<UserVO>) redisTemplate.opsForValue().get(USER_PREFIX + userQuery);
+        if (userVOPage != null) {
+            return ResultUtils.success(userVOPage);
+        }
+
         QueryWrapper<User> queryWrapper = new QueryWrapper<>(userQuery);
         Page<User> userPage = userService.page(new Page<>(current, size), queryWrapper);
-        Page<UserVO> userVOPage = new PageDTO<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        userVOPage = new PageDTO<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
         List<UserVO> userVOList = userPage.getRecords().stream().map(user -> {
             UserVO userVO = new UserVO();
             BeanUtils.copyProperties(user, userVO);
             return userVO;
         }).collect(Collectors.toList());
         userVOPage.setRecords(userVOList);
+        redisTemplate.opsForValue().set(USER_PREFIX + userQuery, userVOPage, 60, TimeUnit.MINUTES);
         return ResultUtils.success(userVOPage);
+    }
+
+    @GetMapping("/getUserCount")
+    public BaseResponse<Long> getUserCount(HttpServletRequest request) {
+        Long count = (Long) redisTemplate.opsForValue().get(USER_PREFIX + "getUserCount");
+        if (count != null) {
+            return ResultUtils.success(count);
+        }
+        count = userService.count();
+        redisTemplate.opsForValue().set(USER_PREFIX + "getUserCount", count, 60, TimeUnit.MINUTES);
+        return ResultUtils.success(count);
     }
 }

@@ -108,14 +108,15 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
             log.error("EXIT at nonce");
             return handleNoAuth(response);
         }
-        // todo 时间和当前时间不能超过 5 分钟
-//        Instant currentInstant = Instant.now();
-//        Instant requestInstant = Instant.ofEpochSecond(Long.parseLong(timestamp));
-//        Duration duration = Duration.between(requestInstant, currentInstant);
-//        final Duration FIVE_MINUTES_DURATION = Duration.ofMinutes(5);
-//        if (duration.compareTo(FIVE_MINUTES_DURATION) >= 0) {
-//            return handleNoAuth(response);
-//        }
+        // 时间和当前时间不能超过 5 分钟
+        Instant currentInstant = Instant.now();
+        Instant requestInstant = Instant.ofEpochSecond(Long.parseLong(timestamp));
+        Duration duration = Duration.between(requestInstant, currentInstant);
+        final Duration FIVE_MINUTES_DURATION = Duration.ofMinutes(5);
+        if (duration.compareTo(FIVE_MINUTES_DURATION) >= 0) {
+            log.error("EXIT at timestamp");
+            return handleNoAuth(response);
+        }
         // 从数据库中查出 secretKey
         String secretKey = invokeUser.getSecretKey();
         String serverSign = SignUtils.genSign(body, secretKey);
@@ -123,16 +124,6 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
             log.error("EXIT at sign");
             return handleNoAuth(response);
         }
-//        // 4. 请求的模拟接口是否存在，以及请求方法是否匹配
-//        InterfaceInfo interfaceInfo = null;
-//        try {
-//            interfaceInfo = innerInterfaceInfoService.getInterfaceInfo(path, method);
-//        } catch (Exception e) {
-//            log.error("getInterfaceInfo error", e);
-//        }
-//        if (interfaceInfo == null) {
-//            return handleNoAuth(response);
-//        }
 
         // 5. 查询用户是否还有调用次数
         boolean hasCount = innerInterfaceInfoService.hasCount(Long.parseLong(interfaceId), Long.parseLong(userId));

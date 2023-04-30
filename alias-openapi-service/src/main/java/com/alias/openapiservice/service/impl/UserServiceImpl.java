@@ -1,21 +1,22 @@
 package com.alias.openapiservice.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.ReUtil;
 import cn.hutool.crypto.digest.DigestUtil;
-import com.alias.openapicommon.model.entity.InterfaceInfo;
-import com.alias.openapicommon.model.entity.UserInterfaceInfo;
+import cn.hutool.http.HttpUtil;
+import cn.hutool.json.JSONObject;
 import com.alias.openapiservice.common.ErrorCode;
 import com.alias.openapiservice.exception.BusinessException;
-import com.alias.openapiservice.mapper.UserInterfaceInfoMapper;
 import com.alias.openapiservice.mapper.UserMapper;
-import com.alias.openapiservice.service.InterfaceInfoService;
-import com.alias.openapiservice.service.UserInterfaceInfoService;
 import com.alias.openapiservice.service.UserService;
 import com.alias.openapicommon.model.entity.User;
 import com.alias.openapiservice.util.ValidateCodeUtils;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -27,8 +28,7 @@ import org.springframework.util.DigestUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
-import java.util.ArrayList;
-import java.util.Date;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.alias.openapiservice.constant.UserConstant.ADMIN_ROLE;
 import static com.alias.openapiservice.constant.UserConstant.USER_LOGIN_STATE;
+import static com.alias.openapiservice.constant.RedisConstant.*;
 
 @Slf4j
 @Service
@@ -109,7 +110,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
             }
 
-            if (Objects.equals(redisTemplate.opsForValue().get(email), code)) {
+            if (Objects.equals(redisTemplate.opsForValue().get(REGISTER_EMAIL_PREFIX + email), code)) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "验证码错误");
             }
 
@@ -122,9 +123,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (redisTemplate.opsForValue().get(email) != null) {
+            if (redisTemplate.opsForValue().get(REGISTER_EMAIL_PREFIX + email) != null) {
                 // 删除验证码
-                redisTemplate.delete(email);
+                redisTemplate.delete(REGISTER_EMAIL_PREFIX + email);
             }
             // 释放锁
             lock.unlock();
@@ -175,6 +176,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 4. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, safetyUser);
+        redisTemplate.opsForValue().set(LOGIN_USER_PREFIX + safetyUser.getId() + "_" + USER_LOGIN_STATE, safetyUser, 60, TimeUnit.MINUTES);
 
         return safetyUser;
     }
@@ -193,12 +195,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
-        // 从数据库查询（追求性能的话可以注释，直接走缓存）
         long userId = currentUser.getId();
+
+        // 从数据库查询
         currentUser = this.getById(userId);
         if (currentUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
+
+        request.getSession().setAttribute(USER_LOGIN_STATE, currentUser);
         return currentUser;
     }
 
@@ -223,12 +228,77 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     public boolean logout(HttpServletRequest request) {
-        if (request.getSession().getAttribute(USER_LOGIN_STATE) == null) {
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        User user = (User) userObj;
+        if (user == null) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
         }
         // 移除登录态
         request.getSession().removeAttribute(USER_LOGIN_STATE);
+        redisTemplate.delete(LOGIN_USER_PREFIX + user.getId() + "_" + USER_LOGIN_STATE);
         return true;
+    }
+
+    @Override
+    public Integer getStars() throws IOException {
+        // 从缓存查询
+        Integer redisStars = (Integer) redisTemplate.opsForValue().get(GITHUB_STARS_PREFIX);
+        if (redisStars != null) {
+            return redisStars;
+        }
+        // 获取github stars
+        String listContent = null;
+        try {
+            // todo 获取github stars
+            listContent= HttpUtil.get("https://img.shields.io/github/stars/YukeSeko?style=social");
+        }catch (Exception e){
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,"获取GitHub Starts 超时");
+        }
+        //该操作查询时间较长
+        List<String> titles = ReUtil.findAll("<title>(.*?)</title>", listContent, 1);
+        String str = null;
+        for (String title : titles) {
+            //打印标题
+            String[] split = title.split(":");
+            str = split[1];
+        }
+
+        Integer githubStars = Integer.parseInt(str.trim());
+
+        // 获取gitee star数（可能超出请求限制）
+        String owner = "AliasJeff";
+        String repo1 = "alias-openapi-frontend";
+        String repo2 = "alias-openapi-backend";
+        String url1 = "https://gitee.com/api/v5/repos/" + owner + "/" + repo1;
+        String url2 = "https://gitee.com/api/v5/repos/" + owner + "/" + repo2;
+
+        OkHttpClient client = new OkHttpClient();
+
+        Integer giteeStars = 0;
+        try {
+            Integer starCount1 = getStarCount(client, url1);
+            Integer starCount2 = getStarCount(client, url2);
+            giteeStars = starCount1 + starCount2;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 加入缓存
+        redisTemplate.opsForValue().set(GITHUB_STARS_PREFIX, giteeStars + githubStars, 2, TimeUnit.MINUTES);
+
+        return githubStars + giteeStars;
+    }
+
+    private static Integer getStarCount(OkHttpClient client, String url) throws Exception {
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        Response response = client.newCall(request).execute();
+        String responseData = response.body().string();
+        System.out.println(responseData);
+        JSONObject jsonObject = new JSONObject(responseData);
+        return jsonObject.getInt("stargazers_count");
     }
 
     @Override
@@ -253,7 +323,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         try {//发送可能失败
             javaMailSender.send(simpleMailMessage);
             //将生成的验证码缓存到redis中，设置有效期为5分钟
-            redisTemplate.opsForValue().set(toEmail, code, 5, TimeUnit.MINUTES);
+            redisTemplate.opsForValue().set(REGISTER_EMAIL_PREFIX + toEmail, code, 5, TimeUnit.MINUTES);
             //没有异常返回true，表示发送成功
             return true;
         } catch (Exception e) {

@@ -11,6 +11,7 @@ import com.alias.openapiservice.model.dto.interfaceInfo.InterfaceInfoAddRequest;
 import com.alias.openapiservice.model.dto.interfaceInfo.InterfaceInfoInvokeRequest;
 import com.alias.openapiservice.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
 import com.alias.openapiservice.model.dto.interfaceInfo.InterfaceInfoUpdateRequest;
+import com.alias.openapiservice.model.vo.InterfaceInfoVO;
 import com.alias.openapiservice.service.InterfaceInfoService;
 import com.alias.openapiservice.service.UserService;
 import com.alias.openapicommon.model.entity.InterfaceInfo;
@@ -20,11 +21,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static com.alias.openapiservice.constant.RedisConstant.INTERFACE_PREFIX;
 
 @RestController
 @RequestMapping("/interfaceInfo")
@@ -37,6 +43,9 @@ public class InterfaceInfoController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private RedisTemplate redisTemplate;
 
     /**
      * 创建
@@ -63,6 +72,8 @@ public class InterfaceInfoController {
             throw new BusinessException(ErrorCode.OPERATION_ERROR);
         }
         long newInterfaceInfoId = interfaceInfo.getId();
+        Set keys = redisTemplate.keys(INTERFACE_PREFIX + "*");
+        redisTemplate.delete(keys);
         return ResultUtils.success(newInterfaceInfoId);
     }
 
@@ -92,6 +103,8 @@ public class InterfaceInfoController {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
         boolean b = interfaceInfoService.removeById(id);
+        Set keys = redisTemplate.keys(INTERFACE_PREFIX + "*");
+        redisTemplate.delete(keys);
         return ResultUtils.success(b);
     }
 
@@ -126,6 +139,8 @@ public class InterfaceInfoController {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
         boolean result = interfaceInfoService.updateById(interfaceInfo);
+        Set keys = redisTemplate.keys(INTERFACE_PREFIX + "*");
+        redisTemplate.delete(keys);
         return ResultUtils.success(result);
     }
 
@@ -148,15 +163,17 @@ public class InterfaceInfoController {
         // 判断接口是否存在
         long id = idRequest.getId();
         log.info("id: {}", id);
-        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        InterfaceInfo oldInterfaceInfo = (InterfaceInfo) redisTemplate.opsForValue().get(INTERFACE_PREFIX + id);
+        if (oldInterfaceInfo == null) {
+            oldInterfaceInfo = interfaceInfoService.getById(id);
+        }
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
 
-        // 验证接口是否可以调用
-        User user = new User();
-        user.setUsername("test");
         // todo 验证接口是否可以调用，修改调用
+//        User user = new User();
+//        user.setUsername("test");
 //        String username = aliasOpenapiClient.getUsernameByPost(user);
 //        if (StringUtils.isBlank(username)) {
 //            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口验证失败");
@@ -167,6 +184,8 @@ public class InterfaceInfoController {
         newInterfaceInfo.setId(id);
         newInterfaceInfo.setStatus(1);
         boolean result = interfaceInfoService.updateById(newInterfaceInfo);
+        Set keys = redisTemplate.keys(INTERFACE_PREFIX + "*");
+        redisTemplate.delete(keys);
         return ResultUtils.success(result);
     }
 
@@ -187,7 +206,11 @@ public class InterfaceInfoController {
 
         // 判断接口是否存在
         long id = idRequest.getId();
-        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        log.info("id: {}", id);
+        InterfaceInfo oldInterfaceInfo = (InterfaceInfo) redisTemplate.opsForValue().get(INTERFACE_PREFIX + id);
+        if (oldInterfaceInfo == null) {
+            oldInterfaceInfo = interfaceInfoService.getById(id);
+        }
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
@@ -197,6 +220,8 @@ public class InterfaceInfoController {
         newInterfaceInfo.setId(id);
         newInterfaceInfo.setStatus(0);
         boolean result = interfaceInfoService.updateById(newInterfaceInfo);
+        Set keys = redisTemplate.keys(INTERFACE_PREFIX + "*");
+        redisTemplate.delete(keys);
         return ResultUtils.success(result);
     }
 
@@ -209,7 +234,7 @@ public class InterfaceInfoController {
      */
     @PostMapping("/invoke")
     public BaseResponse<Object> invokeInterface(@RequestBody InterfaceInfoInvokeRequest interfaceInfoInvokeRequest,
-                                                    HttpServletRequest request) {
+                                                HttpServletRequest request) {
         if (interfaceInfoInvokeRequest == null || interfaceInfoInvokeRequest.getId() == 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -269,10 +294,16 @@ public class InterfaceInfoController {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        InterfaceInfo interfaceInfo = interfaceInfoService.getById(id);
+        InterfaceInfo interfaceInfo = (InterfaceInfo) redisTemplate.opsForValue().get(INTERFACE_PREFIX + id);
+        if (interfaceInfo != null) {
+            return ResultUtils.success(interfaceInfo);
+        }
+
+        interfaceInfo = interfaceInfoService.getById(id);
         if (interfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
+        redisTemplate.opsForValue().set(INTERFACE_PREFIX + id, interfaceInfo, 60, TimeUnit.MINUTES);
         return ResultUtils.success(interfaceInfo);
     }
 
@@ -289,8 +320,14 @@ public class InterfaceInfoController {
         if (interfaceInfoQueryRequest != null) {
             BeanUtils.copyProperties(interfaceInfoQueryRequest, interfaceInfoQuery);
         }
+
+        List<InterfaceInfo> interfaceInfoList = (List<InterfaceInfo>) redisTemplate.opsForValue().get(INTERFACE_PREFIX + interfaceInfoQuery.toString());
+        if (interfaceInfoList != null) {
+            return ResultUtils.success(interfaceInfoList);
+        }
+
         QueryWrapper<InterfaceInfo> queryWrapper = new QueryWrapper<>(interfaceInfoQuery);
-        List<InterfaceInfo> interfaceInfoList = interfaceInfoService.list(queryWrapper);
+        interfaceInfoList = interfaceInfoService.list(queryWrapper);
         return ResultUtils.success(interfaceInfoList);
     }
 
@@ -319,12 +356,40 @@ public class InterfaceInfoController {
         if (size > 50) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+
+        Page<InterfaceInfo> interfaceInfoPage = (Page<InterfaceInfo>) redisTemplate.opsForValue().get(INTERFACE_PREFIX + interfaceInfoQuery.toString());
+        if (interfaceInfoPage != null) {
+            return ResultUtils.success(interfaceInfoPage);
+        }
+
         QueryWrapper<InterfaceInfo> queryWrapper = new QueryWrapper<>(interfaceInfoQuery);
         queryWrapper.like(StringUtils.isNotBlank(content), "content", content);
         queryWrapper.orderBy(StringUtils.isNotBlank(sortField),
                 sortOrder.equals(CommonConstant.SORT_ORDER_ASC), sortField);
-        Page<InterfaceInfo> interfaceInfoPage = interfaceInfoService.page(new Page<>(current, size), queryWrapper);
+        interfaceInfoPage = interfaceInfoService.page(new Page<>(current, size), queryWrapper);
+        redisTemplate.opsForValue().set(INTERFACE_PREFIX + interfaceInfoQuery.toString(), interfaceInfoPage, 60, TimeUnit.MINUTES);
         return ResultUtils.success(interfaceInfoPage);
     }
 
+    @GetMapping("/getInterfaceCount")
+    public BaseResponse<Long> getInterfaceCount(HttpServletRequest request) {
+        Long count = (Long) redisTemplate.opsForValue().get(INTERFACE_PREFIX + "interfaceCount");
+        if (count != null) {
+            return ResultUtils.success(count);
+        }
+        count = interfaceInfoService.count();
+        redisTemplate.opsForValue().set(INTERFACE_PREFIX + "interfaceCount", count, 60, TimeUnit.MINUTES);
+        return ResultUtils.success(count);
+    }
+
+    @GetMapping("/getInterfaceInvokeCount")
+    public BaseResponse<List<InterfaceInfoVO>> getInterfaceInvokeCount(HttpServletRequest request) {
+        List<InterfaceInfoVO> list = (List<InterfaceInfoVO>) redisTemplate.opsForValue().get(INTERFACE_PREFIX + "interfaceInvokeCount");
+        if (list != null) {
+            return ResultUtils.success(list);
+        }
+        list = interfaceInfoService.getInterfaceInfoTotalInvokeCount();
+        redisTemplate.opsForValue().set(INTERFACE_PREFIX + "interfaceInvokeCount", list, 60, TimeUnit.MINUTES);
+        return ResultUtils.success(list);
+    }
 }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 
 @Service
 public interface UserService extends IService<User> {
@@ -40,4 +41,10 @@ public interface UserService extends IService<User> {
     boolean isAdmin(HttpServletRequest request);
 
     boolean logout(HttpServletRequest request);
+
+    /**
+     * 获取github+gitee star数
+     * @return
+     */
+    Integer getStars() throws IOException;
 }

@@ -1,8 +1,11 @@
 package com.alias.openapiservice.service;
 
 import com.alias.openapicommon.model.entity.InterfaceInfo;
+import com.alias.openapiservice.model.vo.InterfaceInfoVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
 * @author zhexun
@@ -13,4 +16,10 @@ import org.springframework.stereotype.Service;
 public interface InterfaceInfoService extends IService<InterfaceInfo> {
 
     void validInterfaceInfo(InterfaceInfo interfaceInfo, boolean add);
+
+    /**
+     * 获取所有接口的总调用次数
+     * @return
+     */
+    List<InterfaceInfoVO> getInterfaceInfoTotalInvokeCount();
 }

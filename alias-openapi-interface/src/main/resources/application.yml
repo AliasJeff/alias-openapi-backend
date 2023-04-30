@@ -11,3 +11,9 @@ spring:
     url: jdbc:mysql://localhost:3306/open_api?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: 12345678
+  # sms service
+  mail:
+    host: smtp.qq.com
+    username: zhexunchen@qq.com
+    password: ualqybfjbbnhcaab
+    default-encoding: utf-8

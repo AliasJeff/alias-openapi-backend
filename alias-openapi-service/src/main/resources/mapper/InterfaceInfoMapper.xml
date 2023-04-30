@@ -38,4 +38,12 @@
             ${ew.customSqlSegment}
         </if>
     </select>
+    <select id="getInterfaceTotalInvokeCounts" resultType="com.alias.openapiservice.model.vo.InterfaceInfoVO">
+        SELECT i.id AS interface_id, i.name AS name, i.status AS status, i.method AS method, i.is_delete AS isDelete, SUM(ui.total_num) AS totalNum
+        FROM interface_info i
+                 LEFT JOIN user_interface_info ui
+                           ON i.id = ui.interface_info_id
+        WHERE i.is_delete = 0 AND ui.is_delete = 0
+        GROUP BY i.id;
+    </select>
 </mapper>

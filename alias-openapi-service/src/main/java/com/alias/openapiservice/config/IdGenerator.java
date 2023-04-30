@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
+ * id生成器, 用于解决雪花算法生成id太长造成前后端通信精度丢失问题
  * compressed id generator, result id not great than 53bits before 2318-06-04.
  */
 public class IdGenerator {

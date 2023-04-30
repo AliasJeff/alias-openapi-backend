@@ -1,6 +1,5 @@
 package com.alias.openapiservice.aop;
 
-import com.alias.openapicommon.model.entity.User;
 import com.alias.openapiservice.service.UserInterfaceInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -9,10 +8,10 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
-import java.util.List;
 
-
+/**
+ * 更新初始化用户调用接口次数
+ */
 @Slf4j
 @Aspect
 @Component

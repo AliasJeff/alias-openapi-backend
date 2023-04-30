@@ -12,7 +12,7 @@ import javax.annotation.Resource;
 
 
 /**
- * 统一注解，解决前后端交互Long类型精度丢失的问题
+ * 统一注解，解决前后端通信Long类型精度丢失的问题
  */
 @Slf4j
 @Configuration
