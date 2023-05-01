@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.alias.openapiservice.constant.RedisConstant.INTERFACE_PREFIX;
+import static com.alias.openapiservice.constant.RedisConstant.USER_INTERFACE_PREFIX;
 
 @RestController
 @RequestMapping("/interfaceInfo")
@@ -279,6 +280,9 @@ public class InterfaceInfoController {
         Integer appId = 123; // todo appid
         ApiClient apiClient = new ApiClient(appId, accessKey, secretKey);
         String result = apiClient.getResult(api);
+
+        Set keys = (Set) redisTemplate.opsForValue().get(USER_INTERFACE_PREFIX + "*");
+        redisTemplate.delete(keys);
 
         return ResultUtils.success(result);
     }
