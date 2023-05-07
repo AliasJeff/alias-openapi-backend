@@ -134,13 +134,13 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
 //            log.error("EXIT at timestamp");
 //            return handleNoAuth(response);
 //        }
-        // 从数据库中查出 secretKey
-        String secretKey = invokeUser.getSecretKey();
-        String serverSign = SignUtils.genSign(body, secretKey);
-        if (sign == null || !sign.equals(serverSign)) {
-            log.error("EXIT at sign");
-            return handleNoAuth(response);
-        }
+        // todo genSign
+//        String secretKey = invokeUser.getSecretKey();
+//        String serverSign = SignUtils.genSign(body, secretKey);
+//        if (sign == null || !sign.equals(serverSign)) {
+//            log.error("EXIT at sign");
+//            return handleNoAuth(response);
+//        }
 
         // 5. 查询用户是否还有调用次数
         boolean hasCount = innerInterfaceInfoService.hasCount(Long.parseLong(interfaceId), Long.parseLong(userId));

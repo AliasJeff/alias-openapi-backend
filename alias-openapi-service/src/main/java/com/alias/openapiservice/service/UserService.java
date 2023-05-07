@@ -18,7 +18,7 @@ public interface UserService extends IService<User> {
      * @param toEmail
      * @return
      */
-    boolean sendEmail(String toEmail, HttpSession sessions);
+    boolean sendEmail(String toEmail);
 
     /**
      * 用户注册
