@@ -10,7 +10,6 @@ import com.alias.openapicommon.service.InnerUserInterfaceInfoService;
 import com.alias.openapicommon.service.InnerUserService;
 import com.alibaba.nacos.common.model.RestResult;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -71,8 +70,11 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         log.info("请求参数：" + request.getQueryParams());
         String sourceAddress = request.getLocalAddress().getHostString();
         log.info("请求来源地址：" + sourceAddress);
+        log.info("请求方法1：" + method);
         log.info("请求来源地址：" + request.getRemoteAddress());
+        log.info("请求方法2：" + method);
         ServerHttpResponse response = exchange.getResponse();
+        log.info("请求方法3：" + method);
         // 2. 访问控制 - 黑白名单
         if (!IP_WHITE_LIST.contains(sourceAddress)) {
             log.error("EXIT at whitelist");
@@ -81,15 +83,30 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         }
         // 3. 用户鉴权在服务器，这里只做判空
         HttpHeaders headers = request.getHeaders();
+        log.info("headers" + headers.toString());
         String accessKey = headers.getFirst("accessKey");
+        log.info("accessKey: " + accessKey);
         String nonce = headers.getFirst("nonce");
-        String timestamp = headers.getFirst("timestamp");
+        log.info("nonce: " + nonce);
+//        String timestamp = headers.getFirst("timestamp");
         String sign = headers.getFirst("sign");
+        log.info("sign: " + sign);
         String body = headers.getFirst("body");
+        log.info("body: " + body);
         String userId = headers.getFirst("userId");
+        log.info("userId: " + userId);
         String interfaceId = headers.getFirst("interfaceId");
+        log.info("interfaceId: " + interfaceId);
+
         if (StringUtils.isAnyBlank(accessKey, userId, interfaceId)) {
             log.error("EXIT at authentication");
+            response.setStatusCode(HttpStatus.FORBIDDEN);
+            return response.setComplete();
+        }
+
+        if (interfaceId == null || interfaceId.trim().isEmpty() ||
+            userId == null || userId.trim().isEmpty()) {
+            log.error("EXIT at interfaceId = {}, userId = {}", interfaceId, userId);
             response.setStatusCode(HttpStatus.FORBIDDEN);
             return response.setComplete();
         }
@@ -104,19 +121,19 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
             log.error("EXIT at NoInvokeUser");
             return handleNoAuth(response);
         }
-        if (Long.parseLong(nonce) > 10000L) {
-            log.error("EXIT at nonce");
-            return handleNoAuth(response);
-        }
-        // 时间和当前时间不能超过 5 分钟
-        Instant currentInstant = Instant.now();
-        Instant requestInstant = Instant.ofEpochSecond(Long.parseLong(timestamp));
-        Duration duration = Duration.between(requestInstant, currentInstant);
-        final Duration FIVE_MINUTES_DURATION = Duration.ofMinutes(5);
-        if (duration.compareTo(FIVE_MINUTES_DURATION) >= 0) {
-            log.error("EXIT at timestamp");
-            return handleNoAuth(response);
-        }
+//        if (Long.parseLong(nonce) > 10000L) {
+//            log.error("EXIT at nonce");
+//            return handleNoAuth(response);
+//        }
+        // todo 时间和当前时间不能超过 5 分钟
+//        Instant currentInstant = Instant.now();
+//        Instant requestInstant = Instant.ofEpochSecond(Long.parseLong(timestamp));
+//        Duration duration = Duration.between(requestInstant, currentInstant);
+//        final Duration FIVE_MINUTES_DURATION = Duration.ofMinutes(5);
+//        if (duration.compareTo(FIVE_MINUTES_DURATION) >= 0) {
+//            log.error("EXIT at timestamp");
+//            return handleNoAuth(response);
+//        }
         // 从数据库中查出 secretKey
         String secretKey = invokeUser.getSecretKey();
         String serverSign = SignUtils.genSign(body, secretKey);
@@ -128,19 +145,20 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
         // 5. 查询用户是否还有调用次数
         boolean hasCount = innerInterfaceInfoService.hasCount(Long.parseLong(interfaceId), Long.parseLong(userId));
         if (!hasCount) {
-            // 调用次数不足
-            log.error("EXIT at insufficient count");
-            response.setStatusCode(HttpStatus.FORBIDDEN);
-            DataBufferFactory bufferFactory = response.bufferFactory();
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            DataBuffer wrap = null;
-            try {
-                wrap = bufferFactory.wrap(objectMapper.writeValueAsBytes(new RestResult<>(403, "调用次数不足")));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-            DataBuffer finalwrap = wrap;
-            return response.writeWith(Mono.fromSupplier(() -> finalwrap));
+            // todo 调用次数不足
+//            log.error("EXIT at insufficient count");
+//            response.setStatusCode(HttpStatus.FORBIDDEN);
+//            DataBufferFactory bufferFactory = response.bufferFactory();
+//            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+//            DataBuffer wrap = null;
+//            try {
+//                wrap = bufferFactory.wrap(objectMapper.writeValueAsBytes(new RestResult<>(403, "调用次数不足")));
+//            } catch (JsonProcessingException e) {
+//                throw new RuntimeException(e);
+//            }
+//            DataBuffer finalwrap = wrap;
+//            return response.writeWith(Mono.fromSupplier(() -> finalwrap));
+            return handleNoAuth(response);
         }
         return handleResponse(exchange, chain, Long.parseLong(interfaceId), invokeUser.getId());
 

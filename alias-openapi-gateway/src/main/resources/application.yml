@@ -2,6 +2,8 @@ server:
   port: 8090
 
 spring:
+  application:
+    name: openapi-gateway-dubbo
   cloud:
     gateway:
       default-filters:
@@ -12,6 +14,7 @@ spring:
           uri: http://localhost:8123
           predicates:
             - Path=/api/**
+
 #      globalcors:
 #        corsConfigurations:
 #          '[/**]':
@@ -20,15 +23,13 @@ spring:
 #            allowedHeaders: "*"
 #            allowedMethods: "*"
 #            maxAge: 3628800
-
-
-
 dubbo:
   application:
-    name: dubbo-springboot-demo-provider
+    name: alias-gateway-dubbo
   protocol:
     name: dubbo
     port: -1
   registry:
     id: nacos-registry
+#    address: nacos://124.222.157.108:8848
     address: nacos://localhost:8848

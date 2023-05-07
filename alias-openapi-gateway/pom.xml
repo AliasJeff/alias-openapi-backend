@@ -11,7 +11,7 @@
 
     <groupId>com.alias</groupId>
     <artifactId>alias-openapi-gateway</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
 
     <name>alias-openapi-gateway</name>
     <description>alias-openapi-gateway</description>
@@ -19,6 +19,9 @@
         <java.version>1.8</java.version>
         <spring-cloud.version>2021.0.6</spring-cloud.version>
     </properties>
+
+    <packaging>jar</packaging>
+
     <dependencies>
         <dependency>
             <groupId>com.alias</groupId>
@@ -29,7 +32,7 @@
         <dependency>
             <groupId>com.alias</groupId>
             <artifactId>alias-openapi-client-sdk</artifactId>
-            <version>0.0.4</version>
+            <version>0.0.5</version>
         </dependency>
 
         <dependency>
@@ -38,9 +41,27 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>6.0.4</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo</artifactId>
-            <version>3.1.8</version>
+            <version>3.0.9</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.alibaba</groupId>
+                    <artifactId>fastjson</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-spring-boot-starter</artifactId>
+            <version>3.0.9</version>
         </dependency>
 
         <dependency>

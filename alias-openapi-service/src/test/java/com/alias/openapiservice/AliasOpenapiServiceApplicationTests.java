@@ -13,10 +13,4 @@ class AliasOpenapiServiceApplicationTests {
     @Resource
     private UserService userService;
 
-    @Test
-    void testGetStars() throws IOException {
-        Integer stars = userService.getStars();
-        System.out.println(stars);
-    }
-
 }

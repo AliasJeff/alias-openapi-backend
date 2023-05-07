@@ -13,7 +13,7 @@ import java.util.*;
 import org.springframework.context.ApplicationContext;
 
 @Slf4j
-@MapperScan("com.alias.openapiservice.Mapper")
+@MapperScan("com.alias.openapiservice.mapper")
 //@ServletComponentScan
 @EnableTransactionManagement
 @EnableCaching

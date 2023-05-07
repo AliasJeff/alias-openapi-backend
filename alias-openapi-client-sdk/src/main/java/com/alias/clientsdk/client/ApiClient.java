@@ -59,7 +59,7 @@ public class ApiClient {
         map.put("accessKey", accessKey);
 //        map.put("secretKey", secretKey);
         map.put("body", body);
-        map.put("timestamp", String.valueOf(DateUtil.date(System.currentTimeMillis())));
+//        map.put("timestamp", String.valueOf(DateUtil.date(System.currentTimeMillis())));
         map.put("nonce", RandomUtil.randomNumbers(4));
         map.put("sign", genSign(body, secretKey));
         return map;

@@ -16,6 +16,7 @@ spring:
     username: zhexunchen@qq.com
     password: ualqybfjbbnhcaab
     default-encoding: utf-8
+    protocol: smtp
   # session
   session:
     timeout: 86400
@@ -61,10 +62,11 @@ knife4j:
           - com.knife4j.demo.new3
 dubbo:
   application:
-    name: openapidubbo
+    name: alias-service-dubbo
   protocol:
     name: dubbo
     port: -1
   registry:
     id: nacos-registry
+#    address: nacos://124.222.157.108:8848/
     address: nacos://localhost:8848

@@ -22,6 +22,9 @@ CREATE TABLE `user`
     UNIQUE KEY `uni_userAccount` (`account`)
 ) COMMENT='用户';
 
+INSERT INTO `user` (`id`, `username`, `account`, `phone`, `email`, `avatar`, `gender`, `role`, `password`, `access_key`, `secret_key`, `create_time`, `update_time`, `is_delete`) VALUES (1378088041316352, NULL, 'admin', NULL, '2022248374@qq.com', 'https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png', NULL, 'admin', '194344925efb6fdd57eb0384376fa278', 'b569bd6b1ebb1c9f193b5739df444b7b', 'c2de412d6a0414b1686dd602195a2396', '2023-04-23 15:52:58', '2023-04-23 15:53:30', 0);
+
+
 -- ----------------------------
 -- Table structure for interface_info
 -- ----------------------------

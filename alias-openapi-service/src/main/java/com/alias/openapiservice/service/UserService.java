@@ -4,10 +4,13 @@ import com.alias.openapicommon.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.stereotype.Service;
 
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
-@Service
 public interface UserService extends IService<User> {
 
     /**
@@ -15,7 +18,7 @@ public interface UserService extends IService<User> {
      * @param toEmail
      * @return
      */
-    boolean sendEmail(String toEmail);
+    boolean sendEmail(String toEmail, HttpSession sessions);
 
     /**
      * 用户注册
