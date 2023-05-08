@@ -32,7 +32,7 @@ API开放平台能够在前后端分离的开发流程中，方便前端开发�
 
 ## 2. 业务流程
 
-<img src="/Users/zhexun/Library/Application%20Support/typora-user-images/image-20230502184346171.png" alt="image-20230502184346171" style="zoom:50%;" />
+![dcbf0f2ac93c97ba1e204a818d889507.png](https://img1.imgtp.com/2023/05/08/vWG0kej1.png)
 
 ## 3. 技术选型
 
