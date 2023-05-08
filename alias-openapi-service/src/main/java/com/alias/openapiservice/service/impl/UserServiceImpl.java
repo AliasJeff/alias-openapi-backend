@@ -181,7 +181,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         // 4. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, safetyUser);
-        redisTemplate.opsForValue().set(LOGIN_USER_PREFIX + safetyUser.getId() + "_" + USER_LOGIN_STATE, safetyUser, 60, TimeUnit.MINUTES);
 
         return safetyUser;
     }
@@ -289,7 +288,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
 
         // 加入缓存
-        redisTemplate.opsForValue().set(GITHUB_STARS_PREFIX, giteeStars + githubStars, 2, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(GITHUB_STARS_PREFIX, giteeStars + githubStars, 1, TimeUnit.MINUTES);
 
         return githubStars + giteeStars;
     }
@@ -332,7 +331,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 获取默认session对象
         Session session = Session.getDefaultInstance(properties, new Authenticator() {
             public PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication("zhexunchen@qq.com", "ualqybfjbbnhcaab"); //发件人邮件用户名、密码
+                return new PasswordAuthentication("zhexunchen@qq.com", "xxxxxxx"); // todo 发件人邮件用户名、密码（授权码）
             }
         });
 

@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -239,14 +240,10 @@ public class UserController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         UserVO userVO = new UserVO();
-        User user = (User) redisTemplate.opsForValue().get(USER_PREFIX + id);
-        if (user != null) {
-            BeanUtils.copyProperties(user, userVO);
-            return ResultUtils.success(userVO);
+        User user = userService.getById(id);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-
-        user = userService.getById(id);
-        redisTemplate.opsForValue().set(USER_PREFIX + id, user, 60, TimeUnit.MINUTES);
         BeanUtils.copyProperties(user, userVO);
         return ResultUtils.success(userVO);
     }
@@ -264,10 +261,7 @@ public class UserController {
         if (userQueryRequest != null) {
             BeanUtils.copyProperties(userQueryRequest, userQuery);
         }
-        List<UserVO> userVOList = (List<UserVO>) redisTemplate.opsForValue().get(USER_PREFIX + userQuery.toString());
-        if (userVOList != null) {
-            return ResultUtils.success(userVOList);
-        }
+        List<UserVO> userVOList = null;
         QueryWrapper<User> queryWrapper = new QueryWrapper<>(userQuery);
         List<User> userList = userService.list(queryWrapper);
         userVOList = userList.stream().map(user -> {
@@ -275,7 +269,6 @@ public class UserController {
             BeanUtils.copyProperties(user, userVO);
             return userVO;
         }).collect(Collectors.toList());
-        redisTemplate.opsForValue().set(USER_PREFIX + userQuery, userVOList, 60, TimeUnit.MINUTES);
         return ResultUtils.success(userVOList);
     }
 
@@ -297,10 +290,7 @@ public class UserController {
             size = userQueryRequest.getPageSize();
         }
 
-        Page<UserVO> userVOPage = (Page<UserVO>) redisTemplate.opsForValue().get(USER_PREFIX + userQuery);
-        if (userVOPage != null) {
-            return ResultUtils.success(userVOPage);
-        }
+        Page<UserVO> userVOPage = null;
 
         QueryWrapper<User> queryWrapper = new QueryWrapper<>(userQuery);
         Page<User> userPage = userService.page(new Page<>(current, size), queryWrapper);
@@ -311,7 +301,6 @@ public class UserController {
             return userVO;
         }).collect(Collectors.toList());
         userVOPage.setRecords(userVOList);
-        redisTemplate.opsForValue().set(USER_PREFIX + userQuery, userVOPage, 60, TimeUnit.MINUTES);
         return ResultUtils.success(userVOPage);
     }
 

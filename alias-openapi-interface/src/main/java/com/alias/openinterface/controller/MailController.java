@@ -72,7 +72,7 @@ public class MailController {
         // 获取默认session对象
         Session session = Session.getDefaultInstance(properties, new Authenticator() {
             public PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication("zhexunchen@qq.com", "ualqybfjbbnhcaab"); //发件人邮件用户名、密码
+                return new PasswordAuthentication("zhexunchen@qq.com", "xxxxxx"); // todo 发件人邮件用户名、密码（授权码）
             }
         });
 
