@@ -13,9 +13,8 @@ spring:
   # sms service
   mail:
     host: smtp.qq.com
-    # todo 填写自己的用户名和密码（授权码）
-    username:
-    password:
+    username: zhexunchen@qq.com
+    password: ualqybfjbbnhcaab
     default-encoding: utf-8
     protocol: smtp
   # session
@@ -69,4 +68,5 @@ dubbo:
     port: -1
   registry:
     id: nacos-registry
-    address: nacos://localhost:8848
+    address: nacos://124.222.157.108:8848/
+#    address: nacos://localhost:8848

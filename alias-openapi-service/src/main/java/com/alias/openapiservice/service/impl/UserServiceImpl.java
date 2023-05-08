@@ -331,7 +331,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 获取默认session对象
         Session session = Session.getDefaultInstance(properties, new Authenticator() {
             public PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication("zhexunchen@qq.com", "xxxxxxx"); // todo 发件人邮件用户名、密码（授权码）
+                return new PasswordAuthentication("zhexunchen@qq.com", "ualqybfjbbnhcaab"); //发件人邮件用户名、密码
             }
         });
 
